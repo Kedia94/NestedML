@@ -1,5 +1,5 @@
 # NestedNet TensorFlow Implementation
-Copied code. Original code is https://github.com/niceday15/nested-network-cifar100.git
+Copied code. Original code is https://github.com/niceday15/nested-network-cifar100
 
 TensorFlow implementation of the folloiwng paper:
 
