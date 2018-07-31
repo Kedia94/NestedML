@@ -78,7 +78,7 @@ image_datagen = ImageDataGenerator(rotation_range=15.,
 
 #Question 2
 import tensorflow as tf
-from mynet import my_net
+from mynet import my_net, inference
 
 # placeholders
 x = tf.placeholder(dtype=tf.float32, shape=(None, 32, 32, 1))
@@ -89,29 +89,48 @@ keep_prob = tf.placeholder(tf.float32)
 # training pipeline
 lr = 0.001
 logits = my_net(x, n_classes=n_classes, keep_prob=keep_prob)
-cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=y)
-loss_function = tf.reduce_mean(cross_entropy)
+
+logits1, logits2, logits3 = inference(x, n_classes=n_classes, keep_prob=keep_prob, is_training=True)
+cross_entropy1 = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits1, labels=y)
+cross_entropy2 = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2, labels=y)
+cross_entropy3 = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits3, labels=y)
+loss_function1 = tf.reduce_mean(cross_entropy1)
+loss_function2 = tf.reduce_mean(cross_entropy2)
+loss_function3 = tf.reduce_mean(cross_entropy3)
+
+loss_function = (loss_function1+ loss_function2+ loss_function3)/3
+
 optimizer = tf.train.AdamOptimizer(learning_rate=lr)
 train_step = optimizer.minimize(loss=loss_function)
 
 
 # Question 3
 # metrics and functions for model evaluation
-correct_prediction = tf.equal(tf.argmax(logits, 1), tf.cast(y, tf.int64))
-accuracy_operation = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+correct_prediction1 = tf.equal(tf.argmax(logits1, 1), tf.cast(y, tf.int64))
+correct_prediction2 = tf.equal(tf.argmax(logits2, 1), tf.cast(y, tf.int64))
+correct_prediction3 = tf.equal(tf.argmax(logits3, 1), tf.cast(y, tf.int64))
+accuracy_operation1 = tf.reduce_mean(tf.cast(correct_prediction1, tf.float32))
+accuracy_operation2 = tf.reduce_mean(tf.cast(correct_prediction2, tf.float32))
+accuracy_operation3 = tf.reduce_mean(tf.cast(correct_prediction3, tf.float32))
 
 def evaluate(X_data, y_data):
     
     num_examples = X_data.shape[0]
-    total_accuracy = 0
+    total_accuracy1 = 0
+    total_accuracy2 = 0
+    total_accuracy3 = 0
     
     sess = tf.get_default_session()
     for offset in range(0, num_examples, BATCHSIZE):
         batch_x, batch_y = X_data[offset:offset+BATCHSIZE], y_data[offset:offset+BATCHSIZE]
-        accuracy = sess.run(accuracy_operation, feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
-        total_accuracy += accuracy * len(batch_x)
+        accuracy1 = sess.run(accuracy_operation1, feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
+        accuracy2 = sess.run(accuracy_operation2, feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
+        accuracy3 = sess.run(accuracy_operation3, feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
+        total_accuracy1 += accuracy1 * len(batch_x)
+        total_accuracy2 += accuracy2 * len(batch_x)
+        total_accuracy3 += accuracy3 * len(batch_x)
         
-    return total_accuracy / num_examples
+    return total_accuracy1 / num_examples, total_accuracy2 / num_examples, total_accuracy3 / num_examples
 
 # create a checkpointer to log the weights during training
 checkpointer = tf.train.Saver()
@@ -144,9 +163,12 @@ with tf.Session() as sess:
                 break
 
         # at epoch end, evaluate accuracy on both training and validation set
-        train_accuracy = evaluate(X_train_norm, y_train)
-        val_accuracy = evaluate(X_val_norm, y_val)
-        print('Train Accuracy = {:.3f} - Validation Accuracy: {:.3f}: {:.3f} sec'.format(train_accuracy, val_accuracy, time.time() - start_time))
+        train_accuracy1, train_accuracy2, train_accuracy3 = evaluate(X_train_norm, y_train)
+        val_accuracy1, val_accuracy2, val_accuracy3 = evaluate(X_val_norm, y_val)
+        print('Spent {:.3f}'.format(time.time()-start_time))
+        print('Train Accuracy1 = {:.3f} - Validation Accuracy1: {:.3f}'.format(train_accuracy1, val_accuracy1))
+        print('Train Accuracy2 = {:.3f} - Validation Accuracy2: {:.3f}'.format(train_accuracy2, val_accuracy2))
+        print('Train Accuracy3 = {:.3f} - Validation Accuracy3: {:.3f}'.format(train_accuracy3, val_accuracy3))
         
         # log current weights
         checkpointer.save(sess, save_path='../checkpoints/traffic_sign_model.ckpt', global_step=epoch)
