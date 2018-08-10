@@ -1,5 +1,10 @@
 # Step 0: Load the Data
 import pickle
+import os
+
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
+
 
 def load_traffic_sign_data(training_file, testing_file):
     with open(training_file, mode='rb') as f:
@@ -88,30 +93,6 @@ keep_prob = tf.placeholder(tf.float32)
 
 # training pipeline
 lr = 0.001
-logits = my_net(x, n_classes=n_classes, keep_prob=keep_prob)
-
-logits1, logits2, logits3 = inference(x, n_classes=n_classes, keep_prob=keep_prob, is_training=True)
-cross_entropy1 = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits1, labels=y)
-cross_entropy2 = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2, labels=y)
-cross_entropy3 = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits3, labels=y)
-loss_function1 = tf.reduce_mean(cross_entropy1)
-loss_function2 = tf.reduce_mean(cross_entropy2)
-loss_function3 = tf.reduce_mean(cross_entropy3)
-
-loss_function = (loss_function1+ loss_function2+ loss_function3)/3
-
-optimizer = tf.train.AdamOptimizer(learning_rate=lr)
-train_step = optimizer.minimize(loss=loss_function)
-
-
-# Question 3
-# metrics and functions for model evaluation
-correct_prediction1 = tf.equal(tf.argmax(logits1, 1), tf.cast(y, tf.int64))
-correct_prediction2 = tf.equal(tf.argmax(logits2, 1), tf.cast(y, tf.int64))
-correct_prediction3 = tf.equal(tf.argmax(logits3, 1), tf.cast(y, tf.int64))
-accuracy_operation1 = tf.reduce_mean(tf.cast(correct_prediction1, tf.float32))
-accuracy_operation2 = tf.reduce_mean(tf.cast(correct_prediction2, tf.float32))
-accuracy_operation3 = tf.reduce_mean(tf.cast(correct_prediction3, tf.float32))
 
 def evaluate(X_data, y_data):
     
@@ -132,43 +113,98 @@ def evaluate(X_data, y_data):
         
     return total_accuracy1 / num_examples, total_accuracy2 / num_examples, total_accuracy3 / num_examples
 
+import time
+with tf.device('/gpu:0'):
+    logits1, logits2, logits3 = inference(x, n_classes=n_classes, keep_prob=keep_prob, is_training=True)
+    cross_entropy1 = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits1, labels=y)
+    cross_entropy2 = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2, labels=y)
+    cross_entropy3 = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits3, labels=y)
+    loss_function1 = tf.reduce_mean(cross_entropy1)
+    loss_function2 = tf.reduce_mean(cross_entropy2)
+    loss_function3 = tf.reduce_mean(cross_entropy3)
+
+    loss_function = (loss_function1+ loss_function2+ loss_function3)/3
+
+    optimizer = tf.train.AdamOptimizer(learning_rate=lr)
+    train_step = optimizer.minimize(loss=loss_function)
+
+
+# Question 3
+# metrics and functions for model evaluation
+    correct_prediction1 = tf.equal(tf.argmax(logits1, 1), tf.cast(y, tf.int64))
+    correct_prediction2 = tf.equal(tf.argmax(logits2, 1), tf.cast(y, tf.int64))
+    correct_prediction3 = tf.equal(tf.argmax(logits3, 1), tf.cast(y, tf.int64))
+    accuracy_operation1 = tf.reduce_mean(tf.cast(correct_prediction1, tf.float32))
+    accuracy_operation2 = tf.reduce_mean(tf.cast(correct_prediction2, tf.float32))
+    accuracy_operation3 = tf.reduce_mean(tf.cast(correct_prediction3, tf.float32))
+
+
 # create a checkpointer to log the weights during training
-checkpointer = tf.train.Saver()
+#checkpointer = tf.train.Saver()
 
 # Qestion 3 part 2
 # training hyperparameters
-BATCHSIZE = 128
-EPOCHS = 30
-BATCHES_PER_EPOCH = 5000
+    BATCHSIZE = 128
+    EPOCHS = 30
+    BATCHES_PER_EPOCH = 5000
 
+    DO_TRAIN = 0	# 1 for get accuracy, 0 for get inference time profiling
 # Question 3 part 3
-import time
 # start training# start 
-with tf.Session() as sess:
+    if DO_TRAIN > 0:
+        with tf.Session() as sess:
 
-    sess.run(tf.global_variables_initializer())
-    start_time = time.time()
+            sess.run(tf.global_variables_initializer())
+            start_time = time.time()
+            f = open("result.txt", 'w', 1)
+            for epoch in range(EPOCHS):
 
-    for epoch in range(EPOCHS):
+                print("EPOCH {} ...".format(epoch + 1))
+                f.write("EPOCH {} ...\n".format(epoch + 1))
 
-        print("EPOCH {} ...".format(epoch + 1))
+                batch_counter = 0
+                for batch_x, batch_y in image_datagen.flow(X_train_norm, y_train, batch_size=BATCHSIZE):
 
-        batch_counter = 0
-        for batch_x, batch_y in image_datagen.flow(X_train_norm, y_train, batch_size=BATCHSIZE):
+                    batch_counter += 1
+                    sess.run(train_step, feed_dict={x: batch_x, y: batch_y, keep_prob: 0.5})
 
-            batch_counter += 1
-            sess.run(train_step, feed_dict={x: batch_x, y: batch_y, keep_prob: 0.5})
-
-            if batch_counter == BATCHES_PER_EPOCH:
-                break
+                    if batch_counter == BATCHES_PER_EPOCH:
+                        break
 
         # at epoch end, evaluate accuracy on both training and validation set
-        train_accuracy1, train_accuracy2, train_accuracy3 = evaluate(X_train_norm, y_train)
-        val_accuracy1, val_accuracy2, val_accuracy3 = evaluate(X_val_norm, y_val)
-        print('Spent {:.3f}'.format(time.time()-start_time))
-        print('Train Accuracy1 = {:.3f} - Validation Accuracy1: {:.3f}'.format(train_accuracy1, val_accuracy1))
-        print('Train Accuracy2 = {:.3f} - Validation Accuracy2: {:.3f}'.format(train_accuracy2, val_accuracy2))
-        print('Train Accuracy3 = {:.3f} - Validation Accuracy3: {:.3f}'.format(train_accuracy3, val_accuracy3))
+                train_accuracy1, train_accuracy2, train_accuracy3 = evaluate(X_train_norm, y_train)
+                val_accuracy1, val_accuracy2, val_accuracy3 = evaluate(X_val_norm, y_val)
+                print('Spent {:.3f}'.format(time.time()-start_time))
+                print('Train Accuracy1 = {:.3f} - Validation Accuracy1: {:.3f}'.format(train_accuracy1, val_accuracy1))
+                print('Train Accuracy2 = {:.3f} - Validation Accuracy2: {:.3f}'.format(train_accuracy2, val_accuracy2))
+                print('Train Accuracy3 = {:.3f} - Validation Accuracy3: {:.3f}'.format(train_accuracy3, val_accuracy3))
+                f.write('Spent {:.3f}\n'.format(time.time()-start_time))
+                f.write('Train Accuracy1 = {:.3f} - Validation Accuracy1: {:.3f}\n'.format(train_accuracy1, val_accuracy1))
+                f.write('Train Accuracy2 = {:.3f} - Validation Accuracy2: {:.3f}\n'.format(train_accuracy2, val_accuracy2))
+                f.write('Train Accuracy3 = {:.3f} - Validation Accuracy3: {:.3f}\n'.format(train_accuracy3, val_accuracy3))
+            f.close()
+            # log current weights
+#                checkpointer.save(sess, save_path='../checkpoints/traffic_sign_model.ckpt', global_step=epoch)
+
+    else:
+        with tf.Session() as sess:
+            sess.run(tf.global_variables_initializer())
+            start_time = time.time()
         
-        # log current weights
-        checkpointer.save(sess, save_path='../checkpoints/traffic_sign_model.ckpt', global_step=epoch)
+            for epoch in range(EPOCHS):
+                batch_x, batch_y = X_val_norm[0:0+BATCHSIZE], y_val[0:0+BATCHSIZE]
+                print("EPOCH {} ...".format(epoch + 1))
+                a = time.time()
+                for epepep in range(0, BATCHSIZE, 1):
+                    _ = sess.run(accuracy_operation1, feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
+                aaa = time.time() - a
+                b = time.time()
+                for epepep in range(0, BATCHSIZE, 1):
+                    _ = sess.run(accuracy_operation2, feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
+                bbb = time.time() - b
+                c = time.time()
+                for epepep in range(0, BATCHSIZE, 1):
+                    _ = sess.run(accuracy_operation3, feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
+                ccc = time.time() - c
+                print('lv1: {:.4f}, lv2: {:.4f}, lv3: {:.4f}'.format(aaa/BATCHSIZE, bbb/BATCHSIZE, ccc/BATCHSIZE))
+

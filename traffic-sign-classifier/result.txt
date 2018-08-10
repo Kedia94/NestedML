@@ -1,0 +1,6 @@
+EPOCH 1 ...
+Spent 209.494
+Train Accuracy1 = 0.905 - Validation Accuracy1: 0.901
+Train Accuracy2 = 0.938 - Validation Accuracy2: 0.934
+Train Accuracy3 = 0.953 - Validation Accuracy3: 0.947
+EPOCH 2 ...
