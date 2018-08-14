@@ -270,7 +270,7 @@ with tf.device('/gpu:0'):
 
         # at epoch end, evaluate accuracy on both training and validation set
                 if DO10 > 0:
-                    train_accuracy1, train_accuracy2, train_accuracy3, train_accuracy4, tran_accuracy5, \
+                    train_accuracy1, train_accuracy2, train_accuracy3, train_accuracy4, train_accuracy5, \
                         train_accuracy6, train_accuracy7, train_accuracy8, train_accuracy9, train_accuracy10 = evaluate10(X_train_norm, y_train)
                     val_accuracy1, val_accuracy2, val_accuracy3, val_accuracy4, val_accuracy5, \
                         val_accuracy6, val_accuracy7, val_accuracy8, val_accuracy9, val_accuracy10 = evaluate10(X_val_norm, y_val)
