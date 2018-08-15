@@ -83,7 +83,7 @@ image_datagen = ImageDataGenerator(rotation_range=15.,
 
 #Question 2
 import tensorflow as tf
-from mynet import my_net, inference, inference10
+from mynet import my_net, inference, inference10, inferencen, n
 
 # placeholders
 x = tf.placeholder(dtype=tf.float32, shape=(None, 32, 32, 1))
@@ -153,12 +153,55 @@ def evaluate10(X_data, y_data):
         
     return total_accuracy1 / num_examples, total_accuracy2 / num_examples, total_accuracy3 / num_examples, total_accuracy4 / num_examples, total_accuracy5 / num_examples, \
             total_accuracy6 / num_examples, total_accuracy7 / num_examples, total_accuracy8 / num_examples, total_accuracy9 / num_examples, total_accuracy10 / num_examples
+
+def evaluaten(X_data, y_data):
+    
+    num_examples = X_data.shape[0]
+    accuracy = []
+    total_accuracy = []
+    for i in range(0, n):
+        accuracy.append(0)
+        total_accuracy.append(0)
+    
+    sess = tf.get_default_session()
+    for offset in range(0, num_examples, BATCHSIZE):
+        batch_x, batch_y = X_data[offset:offset+BATCHSIZE], y_data[offset:offset+BATCHSIZE]
+        for i in range(0, n):
+            accuracy[i] = sess.run(accuracy_operation[i], feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
+            total_accuracy[i] += accuracy[i] * len(batch_x)
+    for i in range(0, n):
+        total_accuracy[i] /= num_examples
+        
+    return total_accuracy
 import time
 DO_TRAIN = 1	# 1 for get accuracy, 0 for get inference time profiling
-DO10 = 1		# 1 for 10 nested, 0 for original
+DO10 = 2		# 2 for n nested, 1 for 10 nested, 0 for original
 
 with tf.device('/gpu:0'):
-    if DO10 > 0:
+    if DO10 == 2:
+        logits = inferencen(x, n_classes=n_classes, keep_prob=keep_prob, is_training=True)
+        cross_entropy = []
+        loss_functions = []
+        for i in range(0, n):
+            cross_entropy.append(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits[i], labels=y))
+            loss_functions.append(tf.reduce_mean(cross_entropy[i]))
+        loss_function = 0
+        for i in range(0, n):
+            loss_function += loss_functions[i]
+        loss_function /= n
+
+        optimizer = tf.train.AdamOptimizer(learning_rate=lr)
+        train_step = optimizer.minimize(loss=loss_function)
+
+        correct_prediction = []
+        for i in range(0, n):
+            correct_prediction.append(tf.equal(tf.argmax(logits[i], 1), tf.cast(y, tf.int64)))
+
+        accuracy_operation = []
+        for i in range(0, n):
+            accuracy_operation.append(tf.reduce_mean(tf.cast(correct_prediction[i], tf.float32)))
+
+    elif DO10 == 1:
         logits1, logits2, logits3, logits4, logits5, \
             logits6, logits7, logits8, logits9, logits10 = inference10(x, n_classes=n_classes, keep_prob=keep_prob, is_training=True)
         cross_entropy1 = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits1, labels=y)
@@ -183,7 +226,7 @@ with tf.device('/gpu:0'):
         loss_function10 = tf.reduce_mean(cross_entropy10)
  
         loss_function = (loss_function1+ loss_function2+ loss_function3 + loss_function4 + loss_function5 + \
-                         loss_function6 + loss_function7 + loss_function8 + loss_function9 + loss_function10)/3
+                         loss_function6 + loss_function7 + loss_function8 + loss_function9 + loss_function10)/10
 
         optimizer = tf.train.AdamOptimizer(learning_rate=lr)
         train_step = optimizer.minimize(loss=loss_function)
@@ -269,7 +312,16 @@ with tf.device('/gpu:0'):
                         break
 
         # at epoch end, evaluate accuracy on both training and validation set
-                if DO10 > 0:
+                if DO10 == 2:
+                    train_accuracy = evaluaten(X_train_norm, y_train)
+                    val_accuracy = evaluaten(X_val_norm, y_val)
+                    print('Spent {:.3f}'.format(time.time()-start_time))
+                    for i in range(0, n):
+                        print('Train Accuracy{} = {:.3f} - Validation Accuracy{}: {:.3f}'.format(i+1, train_accuracy[i], i+1, val_accuracy[i]))
+                    f.write('Spent {:.3f}\n'.format(time.time()-start_time))
+                    for i in range(0, n):
+                        f.write('Train Accuracy{} = {:.3f} - Validation Accuracy{}: {:.3f}'.format(i+1, train_accuracy[i], i+1, val_accuracy[i]))
+                elif DO10 == 1:
                     train_accuracy1, train_accuracy2, train_accuracy3, train_accuracy4, train_accuracy5, \
                         train_accuracy6, train_accuracy7, train_accuracy8, train_accuracy9, train_accuracy10 = evaluate10(X_train_norm, y_train)
                     val_accuracy1, val_accuracy2, val_accuracy3, val_accuracy4, val_accuracy5, \
@@ -319,7 +371,15 @@ with tf.device('/gpu:0'):
             for epoch in range(EPOCHS):
                 batch_x, batch_y = X_val_norm[0:0+BATCHSIZE], y_val[0:0+BATCHSIZE]
                 print("EPOCH {} ...".format(epoch + 1))
-                if DO10 > 0:
+                if DO10 == 2:
+                    for i in range(0, n):
+                        a = time.time()
+                        for epepep in range(0, BATCHSIZE, 1):
+                            _ = sess.run(accuracy_operation[i], feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
+                        aaa = time.time() - a
+                        print('lv{}: {:.4f}, '.format(i+1, aaa/BATCHSIZE), end='')
+                    print('')
+                elif DO10 == 1:
                     a = time.time()
                     for epepep in range(0, BATCHSIZE, 1):
                         _ = sess.run(accuracy_operation1, feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})

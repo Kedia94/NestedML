@@ -17,6 +17,9 @@ l10r7 = 1.0 / 2.0
 l10r8 = 2.0 / 3.0
 l10r9 = 3.0 / 4.0
 
+n = 10																								# n-level
+lnr = [1.0/64.0, 1.0/32.0, 1.0/16.0, 1.0/8.0, 1.0/6.0, 1.0/5.0, 1.0/4.0, 1.0/3.0, 1.0/2.0, 1.0/1.0] # incremental order, last one is 1, n-array
+
 #temp variables
 BN_DECAY = 0.999
 BN_EPSILON = 0.00001
@@ -99,6 +102,26 @@ def create_variables10(name, shape):
         lv7_1_variables, lv7_2_variables, lv8_1_variables, lv8_2_variables, \
         lv9_1_variables, lv9_2_variables, lv10_1_variables, lv10_2_variables
 
+def create_variablesn(name, shape):
+    ni = np.sqrt(6. / (shape[0] * shape[1] * (shape[-2] + shape[-1])))
+
+    shape1 = []
+    shape2 = []
+    shape1.append([shape[0], shape[1], int(lnr[0] * shape[2]), int(lnr[0] * shape[3])])
+	
+    for i in range(1, n):
+        shape1.append([shape[0], shape[1], int(lnr[i] * shape[2]) - int(lnr[i-1] * shape[2]), int(lnr[i-1] * shape[3])] )
+        shape2.append([shape[0], shape[1], int(lnr[i] * shape[2]), int(lnr[i] * shape[3]) - int(lnr[i-1] * shape[3])] )
+
+    lv1_variables = []
+    lv2_variables = []
+    lv1_variables.append(tf.get_variable(name + '_l_0', initializer=tf.random_uniform(shape1[0], -ni, ni, tf.float32, seed=None)))
+    for i in range(1, n):
+        lv1_variables.append(tf.get_variable(name + '_l1_' + str(i), initializer=tf.random_uniform(shape1[i], -ni, ni, tf.float32, seed=None)))
+        lv2_variables.append(tf.get_variable(name + '_l2_' + str(i), initializer=tf.random_uniform(shape2[i-1], -ni, ni, tf.float32, seed=None)))
+
+    return lv1_variables, lv2_variables
+
 def output_layer(input1, input2, input3, num_labels):
 
     input_dim1 = input1.get_shape().as_list()[-1]
@@ -165,6 +188,25 @@ def output_layer10(input1, input2, input3, input4, input5, input6, input7, input
     fc_h10 = tf.matmul(input10, fc_w10) + fc_b10
 
     return fc_h1, fc_h2, fc_h3, fc_h4, fc_h5, fc_h6, fc_h7, fc_h8, fc_h9, fc_h10
+
+def output_layern(inputs, num_labels):
+    input_dim = []
+    for i in range(0, n):
+        input_dim.append(inputs[i].get_shape().as_list()[-1])
+
+    fc_w = []
+    for i in range(0, n):
+        fc_w.append(tf.get_variable('fc_weights_l'+ str(i+1), shape=[input_dim[i], num_labels], initializer=tf.initializers.variance_scaling(scale=1.0)))
+
+    fc_b = []
+    for i in range(0, n):
+        fc_b.append(tf.get_variable(name='fc_bias_l'+ str(i+1), shape=[num_labels], initializer=tf.zeros_initializer()))
+
+    fc_h = []
+    for i in range(0, n):
+        fc_h.append(tf.matmul(inputs[i], fc_w[i]) + fc_b[i])
+
+    return fc_h
 
 def batch_normalization_layer(name, input_layer, dimension, is_training=True):
 
@@ -272,6 +314,31 @@ def conv_layer10(input_layer, filter_shape, stride, is_training):
     conv10 = tf.concat((conv9, tf.nn.conv2d(bn_layer, filter10, strides=[1, stride, stride, 1], padding='SAME')), 3)
 
     return conv1, conv2, conv3, conv4, conv5, conv6, conv7, conv8, conv9, conv10
+
+def conv_layern(input_layer, filter_shape, stride, is_training):
+
+    in_channel = input_layer.get_shape().as_list()[-1]
+
+    bn_layer = batch_normalization_layer('l1_l2_l3', input_layer, in_channel, is_training)
+    bn_layer = tf.nn.relu(bn_layer)
+
+    ni = np.sqrt(6. / (filter_shape[0] * filter_shape[1] * (filter_shape[-2] + filter_shape[-1])))
+
+    filters = []
+    filters.append(tf.get_variable('conv_l1',
+                              initializer=tf.random_uniform([filter_shape[0], filter_shape[1], filter_shape[2], int(lnr[0]*filter_shape[3])],
+                                                            -ni, ni,   tf.float32, seed=None)))
+    for i in range (1, n):
+        filters.append(tf.get_variable('conv_l'+str(i+1),
+                              initializer=tf.random_uniform([filter_shape[0], filter_shape[1], filter_shape[2], int(lnr[i]*filter_shape[3])-int(lnr[i-1]*filter_shape[3])],
+                                                            -ni, ni,   tf.float32, seed=None)))
+
+    conv = []
+    conv.append(tf.nn.conv2d(bn_layer, filters[0], strides=[1, stride, stride, 1], padding='SAME'))
+    for i in range (1, n):
+        conv.append(tf.concat((conv[i-1], tf.nn.conv2d(bn_layer, filters[i], strides=[1, stride, stride, 1], padding='SAME')), 3))
+
+    return conv
 
 def bn_relu_conv_layer(input1, input2, input3, filter_shape, stride, is_training):
 
@@ -485,6 +552,34 @@ def bn_relu_conv_layer10(input1, input2, input3, input4, input5, input6, input7,
                        tf.nn.conv2d(bn_layer10, filter10_2, strides=[1, stride, stride, 1], padding='SAME')), 3)
 
     return conv1, conv2, conv3, conv4, conv5, conv6, conv7, conv8, conv9, conv10
+
+def bn_relu_conv_layern(inputs, filter_shape, stride, is_training):
+
+    in_channel = []
+    for i in range(0, n):
+        in_channel.append(inputs[i].get_shape().as_list()[-1])
+
+    bn_layer = []
+    for i in range(0, n):
+        temp_bn_layer = batch_normalization_layer('l'+str(i+1), inputs[i], in_channel[i], is_training)
+        bn_layer.append(tf.nn.relu(temp_bn_layer))
+
+    filter1, filter2 = create_variablesn(name='conv', shape=filter_shape)
+
+    conv = []
+    conv.append(tf.nn.conv2d(bn_layer[0], filter1[0], strides=[1, stride, stride, 1], padding='SAME'))
+
+    for i in range(1, n):
+        temp_conv = tf.concat((tf.add(tf.nn.conv2d(bn_layer[i][:, :, :, :int(lnr[0] * filter_shape[2])], filter1[0], strides=[1, stride, stride, 1], padding='SAME'),
+                                      tf.nn.conv2d(bn_layer[i][:, :, :, int(lnr[0] * filter_shape[2]):int(lnr[1] * filter_shape[2])], filter1[1], strides=[1, stride, stride, 1], padding='SAME')),
+                               tf.nn.conv2d(bn_layer[i][:, :, :, :int(lnr[1] * filter_shape[2])], filter2[0], strides=[1, stride, stride, 1], padding='SAME')), 3)
+        for j in range(1, i):
+            temp_conv = tf.concat((tf.add(temp_conv, 
+					                      tf.nn.conv2d(bn_layer[i][:, :, :, int(lnr[j] * filter_shape[2]):int(lnr[j+1] * filter_shape[2])], filter1[j+1], strides=[1, stride, stride, 1], padding='SAME')),
+                                  tf.nn.conv2d(bn_layer[i][:, :, :, :int(lnr[j+1] * filter_shape[2])], filter2[j], strides=[1, stride, stride, 1], padding='SAME')), 3)
+        conv.append(temp_conv)
+
+    return conv
 
 def residual_block(input1, input2, input3, output_channel, wide_scale, is_training, first_block=False):
 
@@ -705,6 +800,74 @@ def residual_block10(input1, input2, input3, input4, input5, input6, input7, inp
 
     return output1, output2, output3, output4, output5, output6, output7, output8, output9, output10
 
+def residual_blockn(inputs, output_channel, wide_scale, is_training, first_block=False):
+
+    input_channel = inputs[n-1].get_shape().as_list()[-1]
+
+    # When it's time to "shrink" the image size, we use stride = 2
+    output_channel = int(output_channel * wide_scale)
+
+    if input_channel * wide_scale == output_channel:
+        increase_dim = True
+        stride = 1
+    else:
+        if input_channel * 2 == output_channel:
+            increase_dim = True
+            stride = 2
+        elif input_channel == output_channel:
+            increase_dim = False
+            stride = 1
+        else:
+            raise ValueError('Output and input channel does not match in residual blocks!!!')
+
+    # The first conv layer of the first residual block does not need to be normalized and relu-ed.
+    with tf.variable_scope('conv1_in_block'):
+        if first_block:
+            conv = conv_layern(inputs[0], [3, 3, input_channel, output_channel], stride, is_training)
+        else:
+            conv = bn_relu_conv_layern(inputs, [3, 3, input_channel, output_channel], stride, is_training)
+
+    with tf.variable_scope('conv2_in_block'):
+        conv = bn_relu_conv_layern(conv, [3, 3, output_channel, output_channel], 1, is_training)
+
+    # When the channels of input layer and conv2 does not match, we add zero pads to increase the
+    #  depth of input layers
+    if increase_dim is True:
+        if input_channel * wide_scale == output_channel:
+            if first_block:
+                np = []
+                for i in range(0, n):
+                    np.append(int((output_channel * lnr[i] - input_channel) / 2))
+
+                padded_input = []
+                for i in range(0, n):
+                    padded_input.append(tf.pad(inputs[i], [[0, 0], [0, 0], [0, 0], [np[i], np[i]]]))
+            else:
+                np = []
+                for i in range(0, n):
+                    np.append(int((output_channel - input_channel) / 2) * lnr[i])
+                padded_input = []
+                for i in range(0, n):
+                    padded_input.append(tf.pad(inputs[i], [[0, 0], [0, 0], [0, 0], [np[i], np[i]]]))
+        else:
+            pooled_input = []
+            padded_input = []
+            for i in range(0, n):
+                pooled_input.append(tf.nn.avg_pool(inputs[i], ksize=[1, 2, 2, 1],
+							                       strides=[1, 2, 2, 1], padding='VALID'))
+                padded_input.append(tf.pad(pooled_input[i], [[0, 0], [0, 0], [0, 0], [int(input_channel*lnr[i]) // 2,
+                                                                                      int(input_channel*lnr[i]) // 2]]))
+    else:
+        padded_input = []
+        for i in range(0, n):
+            padded_input.append(inputs[i])
+
+    output = []
+    for i in range(0, n):
+        output.append(conv[i] + padded_input[i])
+
+    return output
+
 # Code from NestedNet END
 
 def bias_variable(shape, start_val=0.1):
@@ -761,6 +924,22 @@ def nested_relu10(input1, input2, input3, input4, input5, input6, input7, input8
 	relu10 = tf.nn.relu(input10 + bias10)
 	return relu1, relu2, relu3, relu4, relu5, relu6, relu7, relu8, relu9, relu10
 
+def nested_relun(inputs, size):
+    sizes = []
+    sizes.append(int(size*lnr[0]))
+    for i in range(1, n):
+        sizes.append(int(size*lnr[i]) - int(size*lnr[i-1]))
+
+    bias = []
+    bias.append(bias_variable(shape=(sizes[0],)))
+    for i in range(1,n):
+        bias.append(tf.concat((bias[i-1], bias_variable(shape=(sizes[i],))),0))
+
+    relu = []
+    for i in range(0, n):
+        relu.append(tf.nn.relu(inputs[i] + bias[i]))
+    return relu
+
 def nested_pool(input1, input2, input3):
 	pool1 = tf.nn.max_pool(input1, ksize=[1,2,2,1], strides=[1,2,2,1], padding = 'SAME')
 	pool2 = tf.nn.max_pool(input2, ksize=[1,2,2,1], strides=[1,2,2,1], padding = 'SAME')
@@ -780,6 +959,12 @@ def nested_pool10(input1, input2, input3, input4, input5, input6, input7, input8
 	pool10 = tf.nn.max_pool(input10, ksize=[1,2,2,1], strides=[1,2,2,1], padding = 'SAME')
 	return pool1, pool2, pool3, pool4, pool5, pool6, pool7, pool8, pool9, pool10
 
+def nested_pooln(inputs):
+    pool = []
+    for i in range(0, n):
+        pool.append(tf.nn.max_pool(inputs[i], ksize=[1,2,2,1], strides=[1,2,2,1], padding = 'SAME'))
+    return pool
+
 def nested_drop(input1, input2, input3, keep_prob):
 	drop1 = tf.nn.dropout(input1, keep_prob=keep_prob)
 	drop2 = tf.nn.dropout(input2, keep_prob=keep_prob)
@@ -798,6 +983,37 @@ def nested_drop10(input1, input2, input3, input4, input5, input6, input7, input8
 	drop9 = tf.nn.dropout(input9, keep_prob=keep_prob)
 	drop10 = tf.nn.dropout(input10, keep_prob=keep_prob)
 	return drop1, drop2, drop3, drop4, drop5, drop6, drop7, drop8, drop9, drop10
+
+def nested_dropn(inputs, keep_prob):
+    drop = []
+    for i in range(0, n):
+        drop.append(tf.nn.dropout(inputs[i], keep_prob=keep_prob))
+    return drop
+
+def nested_fc_concat(drop1_1, drop1_2, drop1_3, drop2_1, drop2_2, drop2_3):
+    fc0_1 = tf.concat([flatten(drop1_1), flatten(drop2_1)], 1)
+    fc0_2 = tf.concat([flatten(drop1_2), flatten(drop2_2)], 1)
+    fc0_3 = tf.concat([flatten(drop1_3), flatten(drop2_3)], 1)
+    return fc0_1, fc0_2, fc0_3
+
+def nested_fc_concat10(drop1_1, drop1_2, drop1_3, drop1_4, drop1_5, drop1_6, drop1_7, drop1_8, drop1_9, drop1_10, drop2_1, drop2_2, drop2_3, drop2_4, drop2_5, drop2_6, drop2_7, drop2_8, drop2_9, drop2_10):
+    fc0_1 = tf.concat([flatten(drop1_1), flatten(drop2_1)], 1)
+    fc0_2 = tf.concat([flatten(drop1_2), flatten(drop2_2)], 1)
+    fc0_3 = tf.concat([flatten(drop1_3), flatten(drop2_3)], 1)
+    fc0_4 = tf.concat([flatten(drop1_4), flatten(drop2_4)], 1)
+    fc0_5 = tf.concat([flatten(drop1_5), flatten(drop2_5)], 1)
+    fc0_6 = tf.concat([flatten(drop1_6), flatten(drop2_6)], 1)
+    fc0_7 = tf.concat([flatten(drop1_7), flatten(drop2_7)], 1)
+    fc0_8 = tf.concat([flatten(drop1_8), flatten(drop2_8)], 1)
+    fc0_9 = tf.concat([flatten(drop1_9), flatten(drop2_9)], 1)
+    fc0_10 = tf.concat([flatten(drop1_10), flatten(drop2_10)], 1)
+    return fc0_1, fc0_2, fc0_3, fc0_4, fc0_5, fc0_6, fc0_7, fc0_8, fc0_9, fc0_10
+    
+def nested_fc_concatn(drop1, drop2):
+    fc0 = []
+    for i in range(0, n):
+        fc0.append(tf.concat([flatten(drop1[i]), flatten(drop2[i])], 1))
+    return fc0
 
 def inference(x, n_classes, keep_prob, is_training):
     
@@ -819,9 +1035,7 @@ def inference(x, n_classes, keep_prob, is_training):
 	pool2_1, pool2_2, pool2_3 = nested_pool(relu2_1, relu2_2, relu2_3)
 	drop2_1, drop2_2, drop2_3 = nested_drop(pool2_1, pool2_2, pool2_3, keep_prob)
 
-	fc0_1 = tf.concat([flatten(drop1_1), flatten(drop2_1)], 1)
-	fc0_2 = tf.concat([flatten(drop1_2), flatten(drop2_2)], 1)
-	fc0_3 = tf.concat([flatten(drop1_3), flatten(drop2_3)], 1)
+	fc0_1, fc0_2, fc0_3 = nested_fc_concat(drop1_1, drop1_2, drop1_3, drop2_1, drop2_2, drop2_3)
 
 	fc1_out = 64
 	with tf.variable_scope('fc1_in_block'):
@@ -870,16 +1084,11 @@ def inference10(x, n_classes, keep_prob, is_training):
         drop2_6, drop2_7, drop2_8, drop2_9, drop2_10 = nested_drop10(pool2_1, pool2_2, pool2_3, pool2_4, pool2_5, \
                                                                      pool2_6, pool2_7, pool2_8, pool2_9, pool2_10, keep_prob)
 
-	fc0_1 = tf.concat([flatten(drop1_1), flatten(drop2_1)], 1)
-	fc0_2 = tf.concat([flatten(drop1_2), flatten(drop2_2)], 1)
-	fc0_3 = tf.concat([flatten(drop1_3), flatten(drop2_3)], 1)
-	fc0_4 = tf.concat([flatten(drop1_4), flatten(drop2_4)], 1)
-	fc0_5 = tf.concat([flatten(drop1_5), flatten(drop2_5)], 1)
-	fc0_6 = tf.concat([flatten(drop1_6), flatten(drop2_6)], 1)
-	fc0_7 = tf.concat([flatten(drop1_7), flatten(drop2_7)], 1)
-	fc0_8 = tf.concat([flatten(drop1_8), flatten(drop2_8)], 1)
-	fc0_9 = tf.concat([flatten(drop1_9), flatten(drop2_9)], 1)
-	fc0_10 = tf.concat([flatten(drop1_10), flatten(drop2_10)], 1)
+	fc0_1, fc0_2, fc0_3, fc0_4, fc0_5, \
+        fc0_6, fc0_7, fc0_8, fc0_9, fc0_10 = nested_fc_concat10(drop1_1, drop1_2, drop1_3, drop1_4, drop1_5, \
+                                                                drop1_6, drop1_7, drop1_8, drop1_9, drop1_10, \
+                                                                drop2_1, drop2_2, drop2_3, drop2_4, drop2_5, \
+                                                                drop2_6, drop2_7, drop2_8, drop2_9, drop2_10)
 
 	fc1_out = 64
 	with tf.variable_scope('fc1_in_block'):
@@ -899,7 +1108,39 @@ def inference10(x, n_classes, keep_prob, is_training):
 
 	return logits1, logits2, logits3, logits4, logits5, logits6, logits7, logits8, logits9, logits10
 
+def inferencen(x, n_classes, keep_prob, is_training):
+    
+	conv1_out = 64
+	with tf.variable_scope('conv1_in_block'):
+		conv1 = conv_layern(x, [3,3,1,conv1_out], 1, is_training)
 
+	relu1 = nested_relun(conv1, conv1_out)
+
+	pool1 = nested_pooln(relu1)
+	drop1 = nested_dropn(pool1, keep_prob)
+
+	conv2_out = 128
+	with tf.variable_scope('conv2_in_block'):
+		conv2 = bn_relu_conv_layern(drop1, [3, 3, conv1_out, conv2_out], 1, is_training)
+
+	relu2 = nested_relun(conv2, conv2_out)
+
+	pool2 = nested_pooln(relu2)
+	drop2 = nested_dropn(pool2, keep_prob)
+
+	fc0 = nested_fc_concatn(drop1, drop2)
+
+	fc1_out = 64
+	with tf.variable_scope('fc1_in_block'):
+		fc1 = output_layern(fc0, fc1_out)
+
+	drop_fc1 = nested_dropn(fc1, keep_prob)
+
+	fc2_out = n_classes
+	with tf.variable_scope('fc2_in_block'):
+		logits = output_layern(drop_fc1, fc2_out)
+
+	return logits
 
 def weight_variable(shape, mu=0, sigma=0.1):
     initialization = tf.truncated_normal(shape=shape, mean=mu, stddev=sigma)
