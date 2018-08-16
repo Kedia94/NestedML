@@ -1,5 +1,11 @@
 # Project 2 - Traffic Sign Classification
-Modified code. Original code is https://github.com/ndrplz/self-driving-car/tree/master/project_2_traffic_sign_classifier
+Modified code. Original code is https://github.com/ndrplz/self-driving-car/tree/master/project\_2\_traffic\_sign\_classifier
+
+Changable variables
+ - train.py:177 DO\_TRAIN
+ - train.py:178 DO10
+ - mynet.py:20  n
+ - mynet.py:21  lnr
 
 The goal of this project was  to build a **CNN** in [TensorFlow](https://www.tensorflow.org/) to **classify traffic sign images** from the [German Traffic Sign Dataset](http://benchmark.ini.rub.de/?section=gtsrb&subsection=dataset).
 

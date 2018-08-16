@@ -320,7 +320,7 @@ with tf.device('/gpu:0'):
                         print('Train Accuracy{} = {:.3f} - Validation Accuracy{}: {:.3f}'.format(i+1, train_accuracy[i], i+1, val_accuracy[i]))
                     f.write('Spent {:.3f}\n'.format(time.time()-start_time))
                     for i in range(0, n):
-                        f.write('Train Accuracy{} = {:.3f} - Validation Accuracy{}: {:.3f}'.format(i+1, train_accuracy[i], i+1, val_accuracy[i]))
+                        f.write('Train Accuracy{} = {:.3f} - Validation Accuracy{}: {:.3f}\n'.format(i+1, train_accuracy[i], i+1, val_accuracy[i]))
                 elif DO10 == 1:
                     train_accuracy1, train_accuracy2, train_accuracy3, train_accuracy4, train_accuracy5, \
                         train_accuracy6, train_accuracy7, train_accuracy8, train_accuracy9, train_accuracy10 = evaluate10(X_train_norm, y_train)
