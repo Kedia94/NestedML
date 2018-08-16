@@ -1,5 +1,5 @@
 # Project 2 - Traffic Sign Classification
-Modified code. Original code is https://github.com/ndrplz/self-driving-car/tree/master/project\_2\_traffic\_sign\_classifier
+Modified code. Original code is https://github.com/ndrplz/self-driving-car/tree/master/project_2_traffic_sign_classifier
 
 Changable variables
  - train.py:177 DO\_TRAIN
