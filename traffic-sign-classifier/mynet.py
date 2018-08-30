@@ -17,8 +17,8 @@ l10r7 = 1.0 / 2.0
 l10r8 = 2.0 / 3.0
 l10r9 = 3.0 / 4.0
 
-n = 10																								# n-level
-lnr = [1.0/64.0, 1.0/32.0, 1.0/16.0, 1.0/8.0, 1.0/6.0, 1.0/5.0, 1.0/4.0, 1.0/3.0, 1.0/2.0, 1.0/1.0] # incremental order, last one is 1, n-array
+n = 10  																								# n-level
+lnr = [1.0/64.0, 1.0/32.0, 1.0/20.0, 1.0/16.0, 1.0/12.0, 1.0/8.0, 1.0/6.0, 1.0/4.0, 1.0/2.0, 1.0/1.0] # incremental order, last one is 1, n-array
 
 #temp variables
 BN_DECAY = 0.999
@@ -1108,11 +1108,17 @@ def inference10(x, n_classes, keep_prob, is_training):
 
 	return logits1, logits2, logits3, logits4, logits5, logits6, logits7, logits8, logits9, logits10
 
-def inferencen(x, n_classes, keep_prob, is_training):
+def inferencen(x, n_classes, keep_prob, is_training, resize = 32):
+
+	if resize == 32:
+		resize_x = x
+	else:
+		temp_x = tf.image.resize_images(x, [resize, resize])
+		resize_x = tf.image.resize_images(temp_x, [32,32])
     
 	conv1_out = 64
 	with tf.variable_scope('conv1_in_block'):
-		conv1 = conv_layern(x, [3,3,1,conv1_out], 1, is_training)
+		conv1 = conv_layern(resize_x, [3,3,1,conv1_out], 1, is_training)
 
 	relu1 = nested_relun(conv1, conv1_out)
 

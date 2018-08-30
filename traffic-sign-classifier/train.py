@@ -1,3 +1,9 @@
+# constants
+DO_TRAIN = 1	# 1 for get accuracy, 0 for get inference time profiling
+DO10 = 2		# 2 for n nested, 1 for 10 nested, 0 for original
+RESIZE = 8		# 32 is original. 
+resize_sizes = [4, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]
+
 # Step 0: Load the Data
 import pickle
 import os
@@ -89,6 +95,7 @@ from mynet import my_net, inference, inference10, inferencen, n
 x = tf.placeholder(dtype=tf.float32, shape=(None, 32, 32, 1))
 y = tf.placeholder(dtype=tf.int32, shape=None)
 keep_prob = tf.placeholder(tf.float32)
+resize = tf.placeholder(tf.int32)
 
 
 # training pipeline
@@ -154,7 +161,7 @@ def evaluate10(X_data, y_data):
     return total_accuracy1 / num_examples, total_accuracy2 / num_examples, total_accuracy3 / num_examples, total_accuracy4 / num_examples, total_accuracy5 / num_examples, \
             total_accuracy6 / num_examples, total_accuracy7 / num_examples, total_accuracy8 / num_examples, total_accuracy9 / num_examples, total_accuracy10 / num_examples
 
-def evaluaten(X_data, y_data):
+def evaluaten(X_data, y_data, resize_size = 32):
     
     num_examples = X_data.shape[0]
     accuracy = []
@@ -167,19 +174,17 @@ def evaluaten(X_data, y_data):
     for offset in range(0, num_examples, BATCHSIZE):
         batch_x, batch_y = X_data[offset:offset+BATCHSIZE], y_data[offset:offset+BATCHSIZE]
         for i in range(0, n):
-            accuracy[i] = sess.run(accuracy_operation[i], feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
+            accuracy[i] = sess.run(accuracy_operation[i], feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0, resize: resize_size})
             total_accuracy[i] += accuracy[i] * len(batch_x)
     for i in range(0, n):
         total_accuracy[i] /= num_examples
         
     return total_accuracy
 import time
-DO_TRAIN = 1	# 1 for get accuracy, 0 for get inference time profiling
-DO10 = 2		# 2 for n nested, 1 for 10 nested, 0 for original
 
 with tf.device('/gpu:0'):
     if DO10 == 2:
-        logits = inferencen(x, n_classes=n_classes, keep_prob=keep_prob, is_training=True)
+        logits = inferencen(x, n_classes=n_classes, keep_prob=keep_prob, is_training=True, resize=resize)
         cross_entropy = []
         loss_functions = []
         for i in range(0, n):
@@ -293,10 +298,16 @@ with tf.device('/gpu:0'):
 # start training# start 
     if DO_TRAIN > 0:
         with tf.Session() as sess:
-
             sess.run(tf.global_variables_initializer())
             start_time = time.time()
-            f = open("result.txt", 'w', 1)
+            if RESIZE > 9:
+                filename = "result_" + str(RESIZE) + ".txt"
+            else:
+                filename = "result_0" + str(RESIZE) + ".txt"
+            f = open('result.txt', 'w', 1)
+            for ii in resize_sizes:
+                f.write('{} '.format(ii))
+            f.write('\n')
             for epoch in range(EPOCHS):
 
                 print("EPOCH {} ...".format(epoch + 1))
@@ -306,7 +317,7 @@ with tf.device('/gpu:0'):
                 for batch_x, batch_y in image_datagen.flow(X_train_norm, y_train, batch_size=BATCHSIZE):
 
                     batch_counter += 1
-                    sess.run(train_step, feed_dict={x: batch_x, y: batch_y, keep_prob: 0.5})
+                    sess.run(train_step, feed_dict={x: batch_x, y: batch_y, keep_prob: 0.5, resize: 32})
 
                     if batch_counter == BATCHES_PER_EPOCH:
                         break
@@ -314,13 +325,21 @@ with tf.device('/gpu:0'):
         # at epoch end, evaluate accuracy on both training and validation set
                 if DO10 == 2:
                     train_accuracy = evaluaten(X_train_norm, y_train)
-                    val_accuracy = evaluaten(X_val_norm, y_val)
+                    val_accuracy = []
+                    for ii in resize_sizes:
+                        val_accuracy.append(evaluaten(X_val_norm, y_val, resize_size = ii))
                     print('Spent {:.3f}'.format(time.time()-start_time))
                     for i in range(0, n):
-                        print('Train Accuracy{} = {:.3f} - Validation Accuracy{}: {:.3f}'.format(i+1, train_accuracy[i], i+1, val_accuracy[i]))
+                        print('Train Accuracy{} = {:.3f} - Validation Accuracy{}: '.format(i+1, train_accuracy[i], i+1), end='')
+                        for ii in range(0, resize_sizes.__len__()):
+                            print('{:.3f} '.format(val_accuracy[ii][i]), end='')
+                        print('')
                     f.write('Spent {:.3f}\n'.format(time.time()-start_time))
                     for i in range(0, n):
-                        f.write('Train Accuracy{} = {:.3f} - Validation Accuracy{}: {:.3f}\n'.format(i+1, train_accuracy[i], i+1, val_accuracy[i]))
+                        f.write('Train Accuracy{} = {:.3f} - Validation Accuracy{}: '.format(i+1, train_accuracy[i], i+1))
+                        for ii in range(0, resize_sizes.__len__()):
+                            f.write('{:.3f} '.format(val_accuracy[ii][i]))
+                        f.write('\n')
                 elif DO10 == 1:
                     train_accuracy1, train_accuracy2, train_accuracy3, train_accuracy4, train_accuracy5, \
                         train_accuracy6, train_accuracy7, train_accuracy8, train_accuracy9, train_accuracy10 = evaluate10(X_train_norm, y_train)
@@ -361,11 +380,13 @@ with tf.device('/gpu:0'):
                     f.write('Train Accuracy3 = {:.3f} - Validation Accuracy3: {:.3f}\n'.format(train_accuracy3, val_accuracy3))
             f.close()
             # log current weights
+            print('saved')
 #                checkpointer.save(sess, save_path='../checkpoints/traffic_sign_model.ckpt', global_step=epoch)
 
     else:
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
+            f = open('time.txt', 'w', 1)
             start_time = time.time()
         
             for epoch in range(EPOCHS):
@@ -375,10 +396,13 @@ with tf.device('/gpu:0'):
                     for i in range(0, n):
                         a = time.time()
                         for epepep in range(0, BATCHSIZE, 1):
-                            _ = sess.run(accuracy_operation[i], feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
+                            _ = sess.run(accuracy_operation[i], feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0, resize: 32})
                         aaa = time.time() - a
                         print('lv{}: {:.4f}, '.format(i+1, aaa/BATCHSIZE), end='')
+                        f.write('lv{}: {:.4f}, '.format(i+1, aaa/BATCHSIZE))
                     print('')
+                    f.write('\n')
+
                 elif DO10 == 1:
                     a = time.time()
                     for epepep in range(0, BATCHSIZE, 1):
@@ -435,4 +459,5 @@ with tf.device('/gpu:0'):
                         _ = sess.run(accuracy_operation3, feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
                     ccc = time.time() - c
                     print('lv1: {:.4f}, lv2: {:.4f}, lv3: {:.4f}'.format(aaa/BATCHSIZE, bbb/BATCHSIZE, ccc/BATCHSIZE))
+            f.close()
 
