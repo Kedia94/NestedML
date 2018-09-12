@@ -1,8 +1,8 @@
 # constants
-DO_TRAIN = 1	# 1 for get accuracy, 0 for get inference time profiling
+DO_TRAIN = 0	# 1 for get accuracy, 0 for get inference time profiling
 DO10 = 2		# 2 for n nested, 1 for 10 nested, 0 for original
 RESIZE = 8		# 32 is original. 
-resize_sizes = [4, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]
+resize_sizes = [1,2,3,4,5,6,7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]
 
 # Step 0: Load the Data
 import pickle
@@ -300,10 +300,6 @@ with tf.device('/gpu:0'):
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             start_time = time.time()
-            if RESIZE > 9:
-                filename = "result_" + str(RESIZE) + ".txt"
-            else:
-                filename = "result_0" + str(RESIZE) + ".txt"
             f = open('result.txt', 'w', 1)
             for ii in resize_sizes:
                 f.write('{} '.format(ii))
@@ -332,13 +328,13 @@ with tf.device('/gpu:0'):
                     for i in range(0, n):
                         print('Train Accuracy{} = {:.3f} - Validation Accuracy{}: '.format(i+1, train_accuracy[i], i+1), end='')
                         for ii in range(0, resize_sizes.__len__()):
-                            print('{:.3f} '.format(val_accuracy[ii][i]), end='')
+                            print('{} '.format(val_accuracy[ii][i]), end='')
                         print('')
-                    f.write('Spent {:.3f}\n'.format(time.time()-start_time))
+                    f.write('Spent {}\n'.format(time.time()-start_time))
                     for i in range(0, n):
                         f.write('Train Accuracy{} = {:.3f} - Validation Accuracy{}: '.format(i+1, train_accuracy[i], i+1))
                         for ii in range(0, resize_sizes.__len__()):
-                            f.write('{:.3f} '.format(val_accuracy[ii][i]))
+                            f.write('{} '.format(val_accuracy[ii][i]))
                         f.write('\n')
                 elif DO10 == 1:
                     train_accuracy1, train_accuracy2, train_accuracy3, train_accuracy4, train_accuracy5, \
@@ -386,65 +382,67 @@ with tf.device('/gpu:0'):
     else:
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
-            f = open('time.txt', 'w', 1)
+            f = open('time_1024.txt', 'w', 1)
             start_time = time.time()
         
             for epoch in range(EPOCHS):
                 batch_x, batch_y = X_val_norm[0:0+BATCHSIZE], y_val[0:0+BATCHSIZE]
                 print("EPOCH {} ...".format(epoch + 1))
                 if DO10 == 2:
+                    checksize = 1024
                     for i in range(0, n):
                         a = time.time()
-                        for epepep in range(0, BATCHSIZE, 1):
+                        for epepep in range(0, checksize, 1):
                             _ = sess.run(accuracy_operation[i], feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0, resize: 32})
                         aaa = time.time() - a
-                        print('lv{}: {:.4f}, '.format(i+1, aaa/BATCHSIZE), end='')
-                        f.write('lv{}: {:.4f}, '.format(i+1, aaa/BATCHSIZE))
+                        print('lv{}: {}, '.format(i+1, aaa/checksize), end='')
+                        f.write('lv{}: {}, '.format(i+1, aaa/checksize))
                     print('')
                     f.write('\n')
 
                 elif DO10 == 1:
+                    checksize = 10000
                     a = time.time()
-                    for epepep in range(0, BATCHSIZE, 1):
+                    for epepep in range(0, checksize, 1):
                         _ = sess.run(accuracy_operation1, feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
                     aaa = time.time() - a
                     b = time.time()
-                    for epepep in range(0, BATCHSIZE, 1):
+                    for epepep in range(0, checksize, 1):
                         _ = sess.run(accuracy_operation2, feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
                     bbb = time.time() - b
                     c = time.time()
-                    for epepep in range(0, BATCHSIZE, 1):
+                    for epepep in range(0, checksize, 1):
                         _ = sess.run(accuracy_operation3, feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
                     ccc = time.time() - c
                     d = time.time()
-                    for epepep in range(0, BATCHSIZE, 1):
+                    for epepep in range(0, checksize, 1):
                         _ = sess.run(accuracy_operation4, feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
                     ddd = time.time() - d
                     e = time.time()
-                    for epepep in range(0, BATCHSIZE, 1):
+                    for epepep in range(0, checksize, 1):
                         _ = sess.run(accuracy_operation5, feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
                     eee = time.time() - e
                     f = time.time()
-                    for epepep in range(0, BATCHSIZE, 1):
+                    for epepep in range(0, checksize, 1):
                         _ = sess.run(accuracy_operation6, feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
                     fff = time.time() - f
                     g = time.time()
-                    for epepep in range(0, BATCHSIZE, 1):
+                    for epepep in range(0, checksize, 1):
                         _ = sess.run(accuracy_operation7, feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
                     ggg = time.time() - g
                     h = time.time()
-                    for epepep in range(0, BATCHSIZE, 1):
+                    for epepep in range(0, checksize, 1):
                         _ = sess.run(accuracy_operation8, feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
                     hhh = time.time() - h
                     i = time.time()
-                    for epepep in range(0, BATCHSIZE, 1):
+                    for epepep in range(0, checksize, 1):
                         _ = sess.run(accuracy_operation9, feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
                     iii = time.time() - i
                     j = time.time()
-                    for epepep in range(0, BATCHSIZE, 1):
+                    for epepep in range(0, checksize, 1):
                         _ = sess.run(accuracy_operation10, feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
                     jjj = time.time() - j
-                    print('lv1: {:.4f}, lv2: {:.4f}, lv3: {:.4f}, lv4: {:.4f}, lv5: {:.4f}, lv6: {:.4f}, lv7: {:.4f}, lv8: {:.4f}, lv9: {:.4f}, lv10: {:.4f}'.format(aaa/BATCHSIZE, bbb/BATCHSIZE, ccc/BATCHSIZE, ddd/BATCHSIZE, eee/BATCHSIZE, fff/BATCHSIZE, ggg/BATCHSIZE, hhh/BATCHSIZE, iii/BATCHSIZE, jjj/BATCHSIZE))
+                    print('lv1: {:.4f}, lv2: {:.4f}, lv3: {:.4f}, lv4: {:.4f}, lv5: {:.4f}, lv6: {:.4f}, lv7: {:.4f}, lv8: {:.4f}, lv9: {:.4f}, lv10: {:.4f}'.format(aaa/checksize, bbb/checksize, ccc/checksize, ddd/checksize, eee/checksize, fff/checksize, ggg/checksize, hhh/checksize, iii/checksize, jjj/checksize))
                 else:
                     a = time.time()
                     for epepep in range(0, BATCHSIZE, 1):
