@@ -8,13 +8,6 @@ public class trafficSignClassifierAnalysis {
 	private static int _BasicPixel = 2934;
 	private static int _StartDistance = 350;
 	private static int _AverageNum = 100;
-<<<<<<< HEAD
-	
-	
-	private static int[] _Weight;
-	private static int[] _Resize;
-	private static float[][] _Accuracy;
-=======
 	private static int _Speed = 70; // km/h
 	private static int _Period = 100;
 	private static int _Times = 500;
@@ -32,51 +25,11 @@ public class trafficSignClassifierAnalysis {
 	private static int[] _Resize;
 	private static double[][] _Accuracy;
 	private static double[] _InferenceTime;
->>>>>>> 8594bdd67a8a2747b6d6b5fbb8984d9282d32790
 
 	public static void main(String[] args) {
 
 		FileReader fr = null;
 		FileWriter fw = null;
-<<<<<<< HEAD
-		
-		BufferedReader br = null;
-		BufferedWriter bw = null;
-		
-		try {
-			fr = new FileReader("input.txt");
-			br = new BufferedReader(fr);
-			
-			String a = br.readLine();
-			String[] tempLine = a.split(" ");
-			int resizeLength = tempLine.length;
-			_Weight = new int[resizeLength];
-			_Resize = new int[resizeLength];
-			
-			/* Weight: resize * resize */
-			for (int i=0; i<resizeLength; i++) {
-				_Resize[i] = Integer.parseInt(tempLine[i]);
-				_Weight[i] =  _Resize[i] * _Resize[i];
-			}
-			
-			_Accuracy = new float[_NestedLevel][resizeLength];
-			
-			for (int i=0; i<_NestedLevel; i++)
-			{
-				a = br.readLine();
-				tempLine = a.split(" ");
-				for (int j=0; j<resizeLength; j++)
-				{
-					_Accuracy[i][j] = Float.parseFloat(tempLine[j+7]);
-				}
-			}
-			
-			float[] get = getAccuracies(7f);
-			for (int i=0; i<get.length; i++)
-				System.out.print(get[i] + " ");
-			
-
-=======
 
 		BufferedReader br = null;
 		BufferedWriter bw = null;
@@ -174,7 +127,6 @@ public class trafficSignClassifierAnalysis {
 						bw.write(result);
 				}
 			}
->>>>>>> 8594bdd67a8a2747b6d6b5fbb8984d9282d32790
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -182,22 +134,6 @@ public class trafficSignClassifierAnalysis {
 			if (bw != null) try {bw.close(); bw = null;} catch (Exception e) {}
 			if (fr != null) try {fr.close(); fr = null;} catch (Exception e) {}
 			if (fw != null) try {fw.close(); fw = null;} catch (Exception e) {}
-<<<<<<< HEAD
-			
-		}
-	}
-	
-	static int getPixel(float distance)
-	{
-		int result = (int)(_BasicPixel / distance);
-		return (result > 32) ? 32 : result;
-	}
-	
-	static int getPostPixel(int pixel)
-	{		
-		int temp = -1;
-	
-=======
 
 		}
 	}
@@ -214,7 +150,6 @@ public class trafficSignClassifierAnalysis {
 	{		
 		int temp = -1;
 
->>>>>>> 8594bdd67a8a2747b6d6b5fbb8984d9282d32790
 		for (int i=0; i<_Resize.length; i++) {
 			if (_Resize[i] > pixel) {
 				temp = i-1;
@@ -224,18 +159,6 @@ public class trafficSignClassifierAnalysis {
 		if (pixel >= _Resize[_Resize.length-1])
 			temp = _Resize.length-1;
 
-<<<<<<< HEAD
-		if (temp < 0)
-			System.out.println("ERROR, check value temp");
-		
-		return _Resize[temp]; 
-	}
-	
-	static float getAccuracy(int level, int pixel)
-	{
-		int temp = -1;
-		
-=======
 		if (temp < 0) {
 			System.out.println("ERROR, check value temp (getPostPixel)");
 			return -1;
@@ -248,43 +171,12 @@ public class trafficSignClassifierAnalysis {
 	{
 		int temp = -1;
 
->>>>>>> 8594bdd67a8a2747b6d6b5fbb8984d9282d32790
 		for (int i=0; i<_Resize.length; i++) {
 			if (_Resize[i] > pixel) {
 				temp = i-1;
 				break;
 			}
 		}
-<<<<<<< HEAD
-		
-		if (pixel >= _Resize[_Resize.length-1])
-			temp = _Resize.length-1;
-		
-		if (temp < 0)
-			System.out.println("ERROR, check value temp");
-		
-		return _Accuracy[level][temp];
-	}
-	
-	static float[] getAccuracies(float speed)
-	{
-		//int n = (int)(_StartDistance / speed) + 1;
-		float[] ret = new float[_NestedLevel];
-		float interval = (speed) / _AverageNum; 
-		
-		for (int i=0; i < _NestedLevel; i++)
-		{
-			float sum = 0;
-			for (int j=0; j < _AverageNum; j++)
-			{
-				float initialDistance = _StartDistance - j * interval;
-				int scoreMax = 0;
-				
-				int n = (int)(initialDistance / speed);
-				for (int k=0; k < n; k++)
-				{
-					float tempDistance = initialDistance - k * speed;
-=======
 
 		if (pixel >= _Resize[_Resize.length-1])
 			temp = _Resize.length-1;
@@ -316,30 +208,20 @@ public class trafficSignClassifierAnalysis {
 				for (int k=0; k < n; k++)
 				{
 					double tempDistance = initialDistance - k * speed;
->>>>>>> 8594bdd67a8a2747b6d6b5fbb8984d9282d32790
 					if (tempDistance < 0)
 						break;
 					int pixel = getPixel(tempDistance);
 					int postPixel = getPostPixel(pixel);
 					scoreMax += postPixel * postPixel;
 				}
-<<<<<<< HEAD
-				
-				float[][] probOfNScore = new float[n][scoreMax + 1];
-=======
 
 				double[][] probOfNScore = new double[n][scoreMax + 1];
->>>>>>> 8594bdd67a8a2747b6d6b5fbb8984d9282d32790
 				{
 
 					int pixel = getPixel(initialDistance);
 					int postPixel = getPostPixel(pixel);
 					int score = postPixel * postPixel;
-<<<<<<< HEAD
-					float accuracy = getAccuracy(i, postPixel);
-=======
 					double accuracy = getAccuracy(i, postPixel);
->>>>>>> 8594bdd67a8a2747b6d6b5fbb8984d9282d32790
 					for (int jj=0; jj<scoreMax + 1; jj++)
 					{
 						if (jj == 0)
@@ -350,18 +232,6 @@ public class trafficSignClassifierAnalysis {
 							probOfNScore[0][jj] = 0;
 					}
 				}
-<<<<<<< HEAD
-				for (int ii = 1; ii < n; ii++)
-				{
-					float tempDistance = initialDistance - ii * speed;
-					if (tempDistance < 0)
-						break;
-					int pixel = getPixel(tempDistance);
-					int postPixel = getPostPixel(pixel);
-					int score = postPixel * postPixel;
-					float accuracy = getAccuracy(i, postPixel);
-					
-=======
 				int ii;
 				for (ii = 1; ii < n; ii++)
 				{
@@ -375,7 +245,6 @@ public class trafficSignClassifierAnalysis {
 					int score = postPixel * postPixel;
 					double accuracy = getAccuracy(i, postPixel);
 
->>>>>>> 8594bdd67a8a2747b6d6b5fbb8984d9282d32790
 					for (int jj=0; jj<scoreMax + 1; jj++)
 					{
 						probOfNScore[ii][jj] = probOfNScore[ii-1][jj] * (1-accuracy);
@@ -385,18 +254,6 @@ public class trafficSignClassifierAnalysis {
 							probOfNScore[ii][jj] += accuracy;
 					}
 				}
-<<<<<<< HEAD
-				
-				sum += probOfNScore[n-1][scoreMax / 2 + 1];
-			}
-			
-			ret[i] = sum / _AverageNum;
-		}
-		
-		return ret;
-	}
-
-=======
 				ii--;
 
 				sum += probOfNScore[ii][scoreMax / 2 + 1];
@@ -408,5 +265,4 @@ public class trafficSignClassifierAnalysis {
 		return ret;
 	}
 	
->>>>>>> 8594bdd67a8a2747b6d6b5fbb8984d9282d32790
 }
