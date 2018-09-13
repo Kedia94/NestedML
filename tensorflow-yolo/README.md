@@ -1,5 +1,7 @@
 # tensorflow-yolo
 
+Modified code. Original code is https://github.com/nilboy/tensorflow-yolo
+
 ### Require
 	tensorflow-1.0
 ### download pretrained model

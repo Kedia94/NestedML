@@ -1,5 +1,7 @@
 # mAP (mean Average Precision)
 
+Modified code. Original code is https://github.com/Cartucho/mAP
+
 [![New](https://img.shields.io/badge/2018-NEW-brightgreen.svg)](https://github.com/Cartucho/mAP/commits/master)
 [![GitHub stars](https://img.shields.io/github/stars/Cartucho/mAP.svg?style=social&label=Stars)](https://github.com/Cartucho/mAP)
 
