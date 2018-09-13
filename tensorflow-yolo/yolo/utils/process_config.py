@@ -1,4 +1,4 @@
-import ConfigParser
+import configparser as ConfigParser
 
 def process_config(conf_file):
   """process configure file to generate CommonParams, DataSetParams, NetParams 
