@@ -212,7 +212,7 @@ class YoloTinyNet(Net):
     #calculate I tensor [CELL_SIZE, CELL_SIZE, BOXES_PER_CELL]
     I = iou_predict_truth * tf.reshape(response, (self.cell_size, self.cell_size, 1))
     
-    max_I = tf.reduce_max(I, 2, keep_dims=True)
+    max_I = tf.reduce_max(I, 2, keepdims=True)
 
     I = tf.cast((I >= max_I), tf.float32) * tf.reshape(response, (self.cell_size, self.cell_size, 1))
 

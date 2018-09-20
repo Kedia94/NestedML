@@ -5,6 +5,7 @@ from __future__ import print_function
 import tensorflow as tf
 import numpy as np
 import re
+PRETRAIN=True
 
 class Net(object):
   """Base Net class 
@@ -19,7 +20,7 @@ class Net(object):
     #trainable variable collection
     self.trainable_collection = []
 
-  def _variable_on_cpu(self, name, shape, initializer, pretrain=True, train=True):
+  def _variable_on_cpu(self, name, shape, initializer, pretrain=PRETRAIN, train=True):
     """Helper to create a Variable stored on CPU memory.
 
     Args:
@@ -39,7 +40,7 @@ class Net(object):
     return var 
 
 
-  def _variable_with_weight_decay(self, name, shape, stddev, wd, pretrain=True, train=True):
+  def _variable_with_weight_decay(self, name, shape, stddev, wd, pretrain=PRETRAIN, train=True):
     """Helper to create an initialized Variable with weight decay.
 
     Note that the Variable is initialized with truncated normal distribution
@@ -62,7 +63,7 @@ class Net(object):
       tf.add_to_collection('losses', weight_decay)
     return var 
 
-  def conv2d(self, scope, input, kernel_size, stride=1, pretrain=True, train=True):
+  def conv2d(self, scope, input, kernel_size, stride=1, pretrain=PRETRAIN, train=True):
     """convolutional layer
 
     Args:
@@ -99,7 +100,7 @@ class Net(object):
     return tf.nn.max_pool(input, ksize=[1, kernel_size[0], kernel_size[1], 1], strides=[1, stride, stride, 1],
                   padding='SAME')
 
-  def local(self, scope, input, in_dimension, out_dimension, leaky=True, pretrain=True, train=True):
+  def local(self, scope, input, in_dimension, out_dimension, leaky=True, pretrain=PRETRAIN, train=True):
     """Fully connection layer
 
     Args:

@@ -44,12 +44,15 @@ class YoloSolver(Solver):
       train_op: op for training
     """
 
-    opt = tf.train.MomentumOptimizer(self.learning_rate, self.moment)
-    grads = opt.compute_gradients(self.total_loss)
-
-    apply_gradient_op = opt.apply_gradients(grads, global_step=self.global_step)
-
-    return apply_gradient_op
+    opt = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
+    return  opt.minimize(loss=self.total_loss)
+# change train model
+#    opt = tf.train.MomentumOptimizer(self.learning_rate, self.moment)
+#    grads = opt.compute_gradients(self.total_loss)
+#
+#    apply_gradient_op = opt.apply_gradients(grads, global_step=self.global_step)
+#
+#    return apply_gradient_op
 
   def construct_graph(self):
     # construct graph
@@ -76,12 +79,12 @@ class YoloSolver(Solver):
     sess = tf.Session()
 
     sess.run(init)
-    saver1.restore(sess, self.pretrain_path)
+#    saver1.restore(sess, self.pretrain_path)
 
 
     summary_writer = tf.summary.FileWriter(self.train_dir, sess.graph)
 
-    for step in xrange(self.max_iterators):
+    for step in range(self.max_iterators):
       start_time = time.time()
       np_images, np_labels, np_objects_num = self.dataset.batch()
 
@@ -91,7 +94,7 @@ class YoloSolver(Solver):
 
       duration = time.time() - start_time
 
-      assert not np.isnan(loss_value), 'Model diverged with loss = NaN'
+#      assert not np.isnan(loss_value), 'Model diverged with loss = NaN'
 
       if step % 10 == 0:
         num_examples_per_step = self.dataset.batch_size
