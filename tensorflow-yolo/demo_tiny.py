@@ -2,7 +2,7 @@ import sys
 
 sys.path.append('./')
 
-from yolo.net.yolo_net import YoloNet 
+from yolo.net.yolo_tiny_net import YoloTinyNet 
 import tensorflow as tf 
 import cv2
 import numpy as np
@@ -55,7 +55,7 @@ common_params = {'image_size': 448, 'num_classes': 20,
                 'batch_size':1}
 net_params = {'cell_size': 7, 'boxes_per_cell':2, 'weight_decay': 0.0005}
 
-net = YoloNet(common_params, net_params, test=True)
+net = YoloTinyNet(common_params, net_params, test=True)
 
 image = tf.placeholder(tf.float32, (1, 448, 448, 3))
 predicts = net.inference(image)

@@ -68,9 +68,9 @@ class YoloSolver(Solver):
     self.train_op = self._train()
 
   def solve(self):
-    saver1 = tf.train.Saver(self.net.pretrained_collection, write_version=1)
+    saver1 = tf.train.Saver(self.net.pretrained_collection, write_version=1)#tf.train.SaverDef.V2)
     #saver1 = tf.train.Saver(self.net.trainable_collection)
-    saver2 = tf.train.Saver(self.net.trainable_collection, write_version=1)
+    saver2 = tf.train.Saver(self.net.trainable_collection, write_version=1)#tf.train.SaverDef.V2)
 
     init =  tf.global_variables_initializer()
 
