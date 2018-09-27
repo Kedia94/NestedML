@@ -60,6 +60,7 @@ net = YoloNet(common_params, net_params, test=True)
 image = tf.placeholder(tf.float32, (1, 448, 448, 3))
 predicts = net.inference(image)
 
+
 sess = tf.Session()
 
 np_img = cv2.imread('cat.jpg')
@@ -74,13 +75,13 @@ np_img = np.reshape(np_img, (1, 448, 448, 3))
 
 saver = tf.train.Saver(net.trainable_collection)
 
-saver.restore(sess, 'models/train/model.ckpt-95000')
+saver.restore(sess, 'models/train/model.ckpt-385000')
 
-np_predict = sess.run(predicts, feed_dict={image: np_img})
+np_predict = sess.run(predicts[4], feed_dict={image: np_img})
 
 xmin, ymin, xmax, ymax, class_num = process_predicts(np_predict)
 class_name = classes_name[class_num]
 cv2.rectangle(resized_img, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255))
 cv2.putText(resized_img, class_name, (int(xmin), int(ymin)), 2, 1.5, (0, 0, 255))
-cv2.imwrite('cat_out.jpg', resized_img)
+cv2.imwrite('cat_out4.jpg', resized_img)
 sess.close()
