@@ -6,6 +6,12 @@ import operator
 import sys
 import argparse
 
+nest = 0
+if (nest < 0):
+  nested = ''
+else:
+  nested = 'level_' + str(nest) + '/'
+
 MINOVERLAP = 0.5 # default value (defined in the PASCAL VOC2012 challenge)
 
 parser = argparse.ArgumentParser()
@@ -299,8 +305,8 @@ for txt_file in ground_truth_files_list:
   file_id = txt_file.split(".txt",1)[0]
   file_id = os.path.basename(os.path.normpath(file_id))
   # check if there is a correspondent predicted objects file
-  if not os.path.exists('predicted/' + file_id + ".txt"):
-    error_msg = "Error. File not found: predicted/" +  file_id + ".txt\n"
+  if not os.path.exists('predicted/' + nested + file_id + ".txt"):
+    error_msg = "Error. File not found: predicted/" +  nested + file_id + ".txt\n"
     error_msg += "(You can avoid this error message by running extra/intersect-gt-and-pred.py)"
     error(error_msg)
   lines_list = file_lines_to_list(txt_file)

@@ -44,15 +44,12 @@ class YoloSolver(Solver):
       train_op: op for training
     """
 
-    opt = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
-    return  opt.minimize(loss=self.total_loss)
-# change train model
-#    opt = tf.train.MomentumOptimizer(self.learning_rate, self.moment)
-#    grads = opt.compute_gradients(self.total_loss)
+    opt = tf.train.AdamOptimizer(self.learning_rate, self.moment)
+    grads = opt.compute_gradients(self.total_loss)
 #
-#    apply_gradient_op = opt.apply_gradients(grads, global_step=self.global_step)
+    apply_gradient_op = opt.apply_gradients(grads, global_step=self.global_step)
 #
-#    return apply_gradient_op
+    return apply_gradient_op
 
   def construct_graph(self):
     # construct graph
@@ -79,7 +76,7 @@ class YoloSolver(Solver):
     sess = tf.Session()
 
     sess.run(init)
-#    saver1.restore(sess, self.pretrain_path)
+    saver1.restore(sess, self.pretrain_path)
 
 
     summary_writer = tf.summary.FileWriter(self.train_dir, sess.graph)

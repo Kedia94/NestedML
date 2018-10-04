@@ -11,7 +11,7 @@ from yolo.net.net import Net
 n = 5                                                                                                  # n-level
 lnr = [1.0/64.0, 1.0/32.0, 1.0/16.0, 1.0/8.0, 1.0/1.0] # incremental order, last one is 1, n-array
 #lnr = [1.0/2.0, 1.0/1.0]
-BN_DECAY = 0.9995 #0.999
+BN_DECAY = 0.999 #0.999
 BN_EPSILON = 0.00001 #0.00001
 
 def create_variablesn(name, shape, pretrained_collection, trainable_collection):
@@ -655,6 +655,6 @@ class YoloNet(Net):
     tf.summary.scalar('object_loss', loss[1]/self.batch_size)
     tf.summary.scalar('noobject_loss', loss[2]/self.batch_size)
     tf.summary.scalar('coord_loss', loss[3]/self.batch_size)
-    tf.summary.scalar('weight_loss', tf.add_n(tf.get_collection('losses')) - (loss[0] + loss[1] + loss[2] + loss[3])/self.batch_size/n )
+#    tf.summary.scalar('weight_loss', tf.add_n(tf.get_collection('losses')) - (loss[0] + loss[1] + loss[2] + loss[3])/self.batch_size/n )
 
     return tf.add_n(tf.get_collection('losses'), name='total_loss'), nilboy

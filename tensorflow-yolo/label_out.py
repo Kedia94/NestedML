@@ -1,4 +1,5 @@
 import sys
+import os
 
 sys.path.append('./')
 
@@ -9,6 +10,9 @@ import numpy as np
 
 classes_name =  ["aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train","tvmonitor"]
 
+model = 'models/train/yolo_firstrun/model.ckpt-385000'
+directory = '/home/wjjang/NestedML/tensorflow-yolo/analysis/mAP/predicted'
+targetlist = '/home/wjjang/external/ObjectDetectionDataset/voc/2007_test.txt'
 threshold = 0.2
 
 def process_predicts(predicts):
@@ -103,36 +107,51 @@ sess = tf.Session()
 
 saver = tf.train.Saver(net.trainable_collection)
 
-#saver.restore(sess, 'models/pretrain/yolo.ckpt')
-#saver.restore(sess, 'models/train/yolo1/model.ckpt-385000')
-#saver.restore(sess, 'models/train/yolo2/model.ckpt-320000')
-saver.restore(sess, 'models/train/yolo3/model.ckpt-405000')
+saver.restore(sess, model)
 
 for ii in range(0, n):
-  np_img = cv2.imread('cat.jpg')
-#  np_img = cv2.imread('/media/wjjang/Samsung T3/ObjectDetectionDataset/voc/VOCdevkit/VOC2007/JPEGImages/000081.jpg')
-  resized_img = cv2.resize(np_img, (448, 448))
-  np_img = cv2.cvtColor(resized_img, cv2.COLOR_BGR2RGB)
+  direc = os.path.dirname(directory + '/level_'+str(ii)+'/')
+#  print(direc)
+  if not os.path.exists(direc):
+    os.makedirs(direc)
 
+fp = open(targetlist, 'r')
+for img in fp.read().splitlines():
+#  print(img)
+  ii = 1
+#  output_name = directory + '/level_' + str(ii) + '/' + img.split('/')[-1].split('.')[0] + '.txt'
+#  output_file = open(output_name, 'w')
+#  output_file.close()
 
-  np_img = np_img.astype(np.float32)
-
-  np_img = np_img / 255.0 * 2 - 1
-  np_img = np.reshape(np_img, (1, 448, 448, 3))
-
-  np_predict = sess.run(predicts[ii], feed_dict={image: np_img})
-
-  xmin, ymin, xmax, ymax, class_num, process_list = process_predicts(np_predict)
-  class_name = classes_name[class_num]
-  for i in range(len(process_list)):
-    [xmin, ymin, xmax, ymax, class_num, accuracy] = process_list[i]
+#  img = '/media/wjjang/Samsung T3/ObjectDetectionDataset/voc/VOCdevkit/VOC2007/JPEGImages/000081.jpg'
+#  continue
+  for ii in range(0, n):
+#    np_img = cv2.imread('cat.jpg')
+    np_img = cv2.imread(img)
+    output_name = directory + '/level_' + str(ii) + '/' + img.split('/')[-1].split('.')[0] + '.txt'
+    output_file = open(output_name, 'w')
+    resized_img = cv2.resize(np_img, (448, 448))
+    np_img = cv2.cvtColor(resized_img, cv2.COLOR_BGR2RGB)
+  
+    np_img = np_img.astype(np.float32)
+  
+    np_img = np_img / 255.0 * 2 - 1
+    np_img = np.reshape(np_img, (1, 448, 448, 3))
+  
+    np_predict = sess.run(predicts[ii], feed_dict={image: np_img})
+  
+    xmin, ymin, xmax, ymax, class_num, process_list = process_predicts(np_predict)
     class_name = classes_name[class_num]
-    print(str(i+1)+ ": "+ class_name + " " + str(xmin) +" " + str(ymin) +" "+ str(xmax) +" "+ str(ymax) + ": "+str(accuracy))
-    cv2.rectangle(resized_img, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255))
-    cv2.putText(resized_img, class_name, (int(xmin), int(ymin)), 2, 1.5, (0, 0, 255))
-
-  print("-------------" + str(ii)+ "-------------")
-  cv2.imwrite('cat_out' + str(ii) + '.jpg', resized_img)
+    for i in range(len(process_list)):
+      [xmin, ymin, xmax, ymax, class_num, accuracy] = process_list[i]
+      class_name = classes_name[class_num]
+      print(str(i+1)+ ": "+ class_name + " " + str(xmin) +" " + str(ymin) +" "+ str(xmax) +" "+ str(ymax) + ": "+str(accuracy))
+      cv2.rectangle(resized_img, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255))
+      cv2.putText(resized_img, class_name, (int(xmin), int(ymin)), 2, 1.5, (0, 0, 255))
+      output_file.write(class_name + " " + str(accuracy) + " " + str(xmin) +" " + str(ymin) +" "+ str(xmax) +" "+ str(ymax) + '\n')
+    output_file.close()
+    print("-------------" + str(ii)+ "-------------")
+    cv2.imwrite('cat_out' + str(ii) + '.jpg', resized_img)
 #  print(class_name + " " + "?" + " " + str(int(xmin)) + " " + str(int(ymin)) + " " + str(int(xmax)) + " " + str(int(ymax)))
 
-sess.close()
+  sess.close()
