@@ -51,6 +51,8 @@ if not args.no_animation:
   except ImportError:
     print("\"opencv-python\" not found, please install to visualize the results.")
     args.no_animation = True
+# Force to not show animation
+show_animation = False
 
 # try to import Matplotlib if the user didn't choose the option --no-plot
 draw_plot = False
@@ -61,6 +63,8 @@ if not args.no_plot:
   except ImportError:
     print("\"matplotlib\" not found, please install it to get the resulting plots.")
     args.no_plot = True
+# Force to not show plot
+draw_plot = False
 
 """
  throw error and exit
@@ -382,13 +386,13 @@ if specific_iou_flagged:
    Load each of the predicted files into a temporary ".json" file.
 """
 # get a list with the predicted files
-predicted_files_list = glob.glob('predicted/*.txt')
+predicted_files_list = glob.glob('predicted/' + nested + '/*.txt')
 predicted_files_list.sort()
 
 for class_index, class_name in enumerate(gt_classes):
   bounding_boxes = []
   for txt_file in predicted_files_list:
-    #print(txt_file)
+#print(txt_file)
     # the first time it checks if all the corresponding ground-truth files exist
     file_id = txt_file.split(".txt",1)[0]
     file_id = os.path.basename(os.path.normpath(file_id))

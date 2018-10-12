@@ -13,7 +13,7 @@ threshold = 0.2
 
 def process_predicts(predicts):
   process_list = []
-  print(predicts.shape)
+#  print(predicts.shape)
   p_classes = predicts[0, :, :, 0:20]
   C = predicts[0, :, :, 20:22]
   coordinate = predicts[0, :, :, 22:]
@@ -26,13 +26,13 @@ def process_predicts(predicts):
   #print P[5,1, 0, :]
 
   index = np.argmax(P)
-  print(P.shape)
+#  print(P.shape)
 #  print(P)
-  print(index)
+#  print(index)
   print('===============')
   index = np.unravel_index(index, P.shape)
 
-  print(P[index[0], index[1], index[2], index[3]])
+  print("max prob: " + str(P[index[0], index[1], index[2], index[3]]))
   for i in range(P.shape[0]):
     for j in range(P.shape[1]):
       for k in range(P.shape[2]):
@@ -104,13 +104,14 @@ sess = tf.Session()
 saver = tf.train.Saver(net.trainable_collection)
 
 #saver.restore(sess, 'models/pretrain/yolo.ckpt')
-#saver.restore(sess, 'models/train/yolo1/model.ckpt-385000')
+saver.restore(sess, 'models/train/yolo1/model.ckpt-385000')
 #saver.restore(sess, 'models/train/yolo2/model.ckpt-320000')
-saver.restore(sess, 'models/train/yolo3/model.ckpt-405000')
+#saver.restore(sess, 'models/train/yolo3/model.ckpt-405000')
+#saver.restore(sess, 'models/train/model.ckpt-1000000')
 
 for ii in range(0, n):
   np_img = cv2.imread('cat.jpg')
-#  np_img = cv2.imread('/media/wjjang/Samsung T3/ObjectDetectionDataset/voc/VOCdevkit/VOC2007/JPEGImages/000081.jpg')
+#  np_img = cv2.imread('/media/wjjang/Samsung T3/ObjectDetectionDataset/voc/VOCdevkit/VOC2007/JPEGImages/000084.jpg')
   resized_img = cv2.resize(np_img, (448, 448))
   np_img = cv2.cvtColor(resized_img, cv2.COLOR_BGR2RGB)
 

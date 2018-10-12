@@ -10,14 +10,19 @@ import numpy as np
 
 classes_name =  ["aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train","tvmonitor"]
 
-model = 'models/train/yolo_firstrun/model.ckpt-385000'
+#model = 'models/train/yolo1/model.ckpt-385000'
+#model = 'models/train/yolo2/model.ckpt-320000'
+#model = 'models/train/yolo3/model.ckpt-405000'
+model = 'models/train/yolo4/model.ckpt-1000000'
+
+
 directory = '/home/wjjang/NestedML/tensorflow-yolo/analysis/mAP/predicted'
 targetlist = '/home/wjjang/external/ObjectDetectionDataset/voc/2007_test.txt'
-threshold = 0.2
+threshold = 0.001
 
 def process_predicts(predicts):
   process_list = []
-  print(predicts.shape)
+#  print(predicts.shape)
   p_classes = predicts[0, :, :, 0:20]
   C = predicts[0, :, :, 20:22]
   coordinate = predicts[0, :, :, 22:]
@@ -30,19 +35,20 @@ def process_predicts(predicts):
   #print P[5,1, 0, :]
 
   index = np.argmax(P)
-  print(P.shape)
+  prob = index
+#  print(P.shape)
 #  print(P)
-  print(index)
-  print('===============')
+#  print(index)
+#  print('===============')
   index = np.unravel_index(index, P.shape)
 
-  print(P[index[0], index[1], index[2], index[3]])
+#  print(P[index[0], index[1], index[2], index[3]])
   for i in range(P.shape[0]):
     for j in range(P.shape[1]):
       for k in range(P.shape[2]):
         for l in range(P.shape[3]):
           if (P[i,j,k,l] > threshold):
-            print('Hi:' + str(P[i,j,k,l]))
+#            print('Hi:' + str(P[i,j,k,l]))
 
             class_num = l
 
@@ -92,7 +98,7 @@ def process_predicts(predicts):
   xmax = xmin + w
   ymax = ymin + h
 
-  return xmin, ymin, xmax, ymax, class_num, process_list
+  return xmin, ymin, xmax, ymax, class_num, prob, process_list
 
 common_params = {'image_size': 448, 'num_classes': 20, 
                 'batch_size':1}
@@ -116,9 +122,14 @@ for ii in range(0, n):
     os.makedirs(direc)
 
 fp = open(targetlist, 'r')
-for img in fp.read().splitlines():
+lit = fp.read().splitlines()
+thisnum = 0
+
+for img in lit:
+  print(str(thisnum) + " / " + str(len(lit)))
+  thisnum += 1
 #  print(img)
-  ii = 1
+#  ii = 1
 #  output_name = directory + '/level_' + str(ii) + '/' + img.split('/')[-1].split('.')[0] + '.txt'
 #  output_file = open(output_name, 'w')
 #  output_file.close()
@@ -140,18 +151,23 @@ for img in fp.read().splitlines():
   
     np_predict = sess.run(predicts[ii], feed_dict={image: np_img})
   
-    xmin, ymin, xmax, ymax, class_num, process_list = process_predicts(np_predict)
+    xmin, ymin, xmax, ymax, class_num, prob, process_list = process_predicts(np_predict)
     class_name = classes_name[class_num]
+    
     for i in range(len(process_list)):
       [xmin, ymin, xmax, ymax, class_num, accuracy] = process_list[i]
       class_name = classes_name[class_num]
-      print(str(i+1)+ ": "+ class_name + " " + str(xmin) +" " + str(ymin) +" "+ str(xmax) +" "+ str(ymax) + ": "+str(accuracy))
+#      print(str(i+1)+ ": "+ class_name + " " + str(xmin) +" " + str(ymin) +" "+ str(xmax) +" "+ str(ymax) + ": "+str(accuracy))
       cv2.rectangle(resized_img, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255))
       cv2.putText(resized_img, class_name, (int(xmin), int(ymin)), 2, 1.5, (0, 0, 255))
       output_file.write(class_name + " " + str(accuracy) + " " + str(xmin) +" " + str(ymin) +" "+ str(xmax) +" "+ str(ymax) + '\n')
     output_file.close()
-    print("-------------" + str(ii)+ "-------------")
+#    print("-------------" + str(ii)+ "-------------")
+    
+    
+# print max only
+#    output_file.write(class_name + " " + str(prob) + " " + str(xmin) +" " + str(ymin) +" "+ str(xmax) +" "+ str(ymax) + '\n')
     cv2.imwrite('cat_out' + str(ii) + '.jpg', resized_img)
 #  print(class_name + " " + "?" + " " + str(int(xmin)) + " " + str(int(ymin)) + " " + str(int(xmax)) + " " + str(int(ymax)))
 
-  sess.close()
+sess.close()
