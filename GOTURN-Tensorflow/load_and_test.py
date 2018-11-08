@@ -84,7 +84,7 @@ if __name__ == "__main__":
     tracknet = goturn_net.TRACKNET(BATCH_SIZE, train = False)
     tracknet.build()
 
-
+    exit()
     sess = tf.Session()
     init = tf.global_variables_initializer()
     init_local = tf.local_variables_initializer()
