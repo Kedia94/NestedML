@@ -14,7 +14,8 @@ classes_name =  ["aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car",
 #model = 'models/train/yolo2/model.ckpt-320000'
 #model = 'models/train/yolo3/model.ckpt-405000'
 #model = 'models/train/yolo4/model.ckpt-1000000'
-model = 'models/train/yolo5/model.ckpt-1020000'
+model = 'models/train/wrong/yolo5/model.ckpt-1020000'
+#model = 'models/train/post_wrong_yolo5/model.ckpt-810000'
 
 
 directory = '/home/wjjang/NestedML/tensorflow-yolo/analysis/mAP/predicted'

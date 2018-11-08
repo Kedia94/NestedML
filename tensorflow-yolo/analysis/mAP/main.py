@@ -6,7 +6,7 @@ import operator
 import sys
 import argparse
 
-nest = 4
+nest = 0
 if (nest < 0):
   nested = ''
 else:
