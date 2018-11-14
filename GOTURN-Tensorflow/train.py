@@ -7,7 +7,7 @@ import os
 import goturn_net
 
 NUM_EPOCHS = 500
-BATCH_SIZE = 50
+BATCH_SIZE = 20
 WIDTH = 227
 HEIGHT = 227
 train_txt = "train_set.txt"

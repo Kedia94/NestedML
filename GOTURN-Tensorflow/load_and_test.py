@@ -5,6 +5,7 @@ import time
 import tensorflow as tf
 import os
 import goturn_net
+from goturn_net import n
 
 NUM_EPOCHS = 500
 BATCH_SIZE = 10
@@ -84,7 +85,7 @@ if __name__ == "__main__":
     tracknet = goturn_net.TRACKNET(BATCH_SIZE, train = False)
     tracknet.build()
 
-    exit()
+#    exit()
     sess = tf.Session()
     init = tf.global_variables_initializer()
     init_local = tf.local_variables_initializer()
@@ -95,23 +96,35 @@ if __name__ == "__main__":
     # start the threads
     tf.train.start_queue_runners(sess=sess, coord=coord)
 
-    ckpt_dir = "./checkpoints"
-    if not os.path.exists(ckpt_dir):
-        os.makedirs(ckpt_dir)
-    ckpt = tf.train.get_checkpoint_state(ckpt_dir)
-    if ckpt and ckpt.model_checkpoint_path:
-        saver = tf.train.Saver()
-        saver.restore(sess, ckpt.model_checkpoint_path)
+#    ckpt_dir = "./checkpoints"
+#    if not os.path.exists(ckpt_dir):
+#        os.makedirs(ckpt_dir)
+#    ckpt = tf.train.get_checkpoint_state(ckpt_dir)
+#    if ckpt and ckpt.model_checkpoint_path:
+#        saver = tf.train.Saver()
+#        saver.restore(sess, ckpt.model_checkpoint_path)
     try:
-        for i in range(0, int(len(train_box)/BATCH_SIZE)):
+        print('start try')
+        for i in range(0, 5):
+#        for i in range(0, int(len(train_box)/BATCH_SIZE)):
             cur_batch = sess.run(batch_queue)
             start_time = time.time()
-            [batch_loss, fc4] = sess.run([tracknet.loss, tracknet.fc4],feed_dict={tracknet.image:cur_batch[0],
-                    tracknet.target:cur_batch[1], tracknet.bbox:cur_batch[2]})
-            logging.info('batch box: %s' %(fc4))
-            logging.info('gt batch box: %s' %(cur_batch[2]))
-            logging.info('batch loss = %f'%(batch_loss))
-            logging.debug('test: time elapsed: %.3fs.'%(time.time()-start_time))
+            for j in range(0, n):
+                a = time.time()
+                for iii in range(0,100):
+                    fc4 = sess.run(tracknet.fc4[j],feed_dict={tracknet.image:cur_batch[0],
+                                tracknet.target:cur_batch[1], tracknet.bbox:cur_batch[2]})
+                aa = time.time() - a
+                print('lv{}: {:.4f}'.format(j, aa/100))
+            print('')
+#            exit()
+
+#            [batch_loss, fc4] = sess.run([tracknet.loss, tracknet.fc4],feed_dict={tracknet.image:cur_batch[0],
+#                    tracknet.target:cur_batch[1], tracknet.bbox:cur_batch[2]})
+#            logging.info('batch box: %s' %(fc4))
+#            logging.info('gt batch box: %s' %(cur_batch[2]))
+#            logging.info('batch loss = %f'%(batch_loss))
+#            logging.debug('test: time elapsed: %.3fs.'%(time.time()-start_time))
     except KeyboardInterrupt:
         print("get keyboard interrupt")
 
