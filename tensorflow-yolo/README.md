@@ -2,6 +2,16 @@
 
 Modified code. Original code is https://github.com/nilboy/tensorflow-yolo
 
+#### train
+```
+python3 tools/train.py -c conf/train.cfg
+```
+
+#### test
+```
+python3 label_out.py 
+```
+
 ### Require
 	tensorflow-1.0
 ### download pretrained model

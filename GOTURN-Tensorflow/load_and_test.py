@@ -12,6 +12,7 @@ BATCH_SIZE = 10
 WIDTH = 227
 HEIGHT = 227
 
+
 logfile = "test.log"
 test_txt = "test_set.txt"
 def load_train_test_set(train_file):
@@ -71,6 +72,7 @@ def next_batch(input_queue):
 
 
 if __name__ == "__main__":
+
     if (os.path.isfile(logfile)):
         os.remove(logfile)
     logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
@@ -86,6 +88,8 @@ if __name__ == "__main__":
     tracknet.build()
 
 #    exit()
+    config = tf.ConfigProto( device_count={'GPU' : 0})
+#    sess = tf.Session(config=config)
     sess = tf.Session()
     init = tf.global_variables_initializer()
     init_local = tf.local_variables_initializer()
@@ -105,17 +109,18 @@ if __name__ == "__main__":
 #        saver.restore(sess, ckpt.model_checkpoint_path)
     try:
         print('start try')
-        for i in range(0, 5):
+        for i in range(4, 5):
 #        for i in range(0, int(len(train_box)/BATCH_SIZE)):
             cur_batch = sess.run(batch_queue)
             start_time = time.time()
-            for j in range(0, n):
+            for j in range(n-1, n):
                 a = time.time()
-                for iii in range(0,100):
+                for iii in range(0,6):
                     fc4 = sess.run(tracknet.fc4[j],feed_dict={tracknet.image:cur_batch[0],
                                 tracknet.target:cur_batch[1], tracknet.bbox:cur_batch[2]})
+                    time.sleep(1)
                 aa = time.time() - a
-                print('lv{}: {:.4f}'.format(j, aa/100))
+                print('lv{}: {:.4f}'.format(j, aa/6))
             print('')
 #            exit()
 

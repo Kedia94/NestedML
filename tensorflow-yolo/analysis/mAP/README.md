@@ -2,6 +2,9 @@
 
 Modified code. Original code is https://github.com/Cartucho/mAP
 
+Changable variables
+ - main.py:9 nest
+
 [![New](https://img.shields.io/badge/2018-NEW-brightgreen.svg)](https://github.com/Cartucho/mAP/commits/master)
 [![GitHub stars](https://img.shields.io/github/stars/Cartucho/mAP.svg?style=social&label=Stars)](https://github.com/Cartucho/mAP)
 

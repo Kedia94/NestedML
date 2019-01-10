@@ -7,6 +7,11 @@ Changable variables
  - mynet.py:20  n
  - mynet.py:21  lnr
 
+#### How to Run
+```
+python3 train.py
+```
+
 The goal of this project was  to build a **CNN** in [TensorFlow](https://www.tensorflow.org/) to **classify traffic sign images** from the [German Traffic Sign Dataset](http://benchmark.ini.rub.de/?section=gtsrb&subsection=dataset).
 
 Main steps covered in this lab are:
